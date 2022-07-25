@@ -1,9 +1,9 @@
 let path = require(`path`);
 
 let serverPath = __filename;
-let appPath = __filename;
-let relativeIndexPath = `/node/index.html`;
-let absoluteIndexPath = __filename;
+let appPath = __dirname + `/app.js`;
+let relativeIndexPath = `./index.html`;
+let absoluteIndexPath = path.join(__dirname, `index.html`);
 
 // console.log(relativeIndexPath);
 // console.log(absoluteIndexPath);
