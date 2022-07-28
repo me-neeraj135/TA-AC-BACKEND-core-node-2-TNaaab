@@ -4,31 +4,68 @@ let url = require(`url`);
 let qs = require(`querystring`);
 let path = require(`path`);
 
-let userDir = path.join(__dirname, `/users`);
+let userPath = path.join(__dirname, `/users/`);
 
 let server = http.createServer(handleRequest);
 
 function handleRequest(req, res) {
+  let parseUrl = url.parse(req.url, true);
   let store = ``;
-  let userName = JSON.parse(store).username;
 
   req.on(`data`, chunk => {
     store += chunk;
   });
 
   req.on(`end`, () => {
-    if (req.method === `GET` && req.url === `/user`) {
-      res.setHeader(`content-type`, `text/html`);
-      fs.createReadStream(`./index.html`).pipe(res);
-    } else if (req.method === `POST` && req.url === `/index`) {
-      let parseData = qs.parse(store);
-      fs.open(userDir + userName, +`.json`, `wx`, (err, content) => {
-        if (err) throw err;
-        res.setHeader(`content-type`, `/html`);
-        fs.createReadStream(`./index.html`).pipe(res);
-        console.log(`saved`);
-        text;
+    if (req.url === `/users` && req.method === `POST`) {
+      let parseData = JSON.parse(store);
+      let username = parseData.username;
+
+      fs.open(userPath + username + `.json`, `wx`, (err, fd) => {
+        if (err) return console.log(err);
+
+        fs.writeFile(fd, store, err => {
+          if (err) return console.log(err);
+          fs.close(fd, err => {
+            return console.log(`${username} created successfully`);
+          });
+        });
       });
+    } else if (parseUrl.pathname === `/users` && req.method === `GET`) {
+      let username = parseUrl.query.username;
+      fs.readFile(userPath + username + `.json`, (err, content) => {
+        if (err) return console.log(err);
+
+        res.setHeader(`Content-type`, `applications/jason`);
+        res.end(content);
+      });
+    } else if (parseUrl.pathname === `/users` && req.method === `PUT`) {
+      let parseData = JSON.parse(store);
+      let username = parseData.username;
+      fs.open(userPath + username + `.json`, `r+`, (err, fd) => {
+        if (err) return console.log(err);
+        fs.ftruncate(fd, err => {
+          if (err) return console.log(err);
+
+          fs.writeFile(fd, store, err => {
+            if (err) return console.log(err);
+            fs.close(fd, err => {
+              if (err) return console.log(err);
+              return console.log(`${username} successfully updated`);
+            });
+          });
+        });
+      });
+    } else if (parseUrl.pathname === `/users` && req.method === `DELETE`) {
+      let username = parseUrl.query.username;
+
+      fs.unlink(userPath + username + `.json`, err => {
+        if (err) return console.log(err);
+        return console.log(`${username} removed successfully`);
+      });
+    } else {
+      res.statusCode = 404;
+      res.end(`page not found`);
     }
   });
 }
